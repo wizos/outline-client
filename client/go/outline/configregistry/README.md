@@ -1,4 +1,4 @@
-# Outline Config
+# Outline Config Registry
 
 ## Overview
 
