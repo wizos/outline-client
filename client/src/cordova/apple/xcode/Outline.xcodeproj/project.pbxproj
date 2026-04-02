@@ -806,7 +806,6 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEVELOPMENT_TEAM = WP4DKSWWZM;
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = WP4DKSWWZM;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"Outline/Plugins/cordova-plugin-outline",
@@ -856,7 +855,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = WP4DKSWWZM;
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = WP4DKSWWZM;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"Outline/Plugins/cordova-plugin-outline",
