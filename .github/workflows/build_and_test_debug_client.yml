@@ -141,7 +141,7 @@ jobs:
           go-version-file: '${{ github.workspace }}/go.mod'
 
       - name: Install zig
-        uses: mlugg/setup-zig@v2.2.1
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
           version: 0.13.0
           use-cache: false
