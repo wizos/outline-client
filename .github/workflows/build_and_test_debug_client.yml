@@ -97,8 +97,10 @@ jobs:
             # puppeteer 13 has no arm64 chromium; install system chromium so
             # its postinstall finds one.
             installChromium: true
-            # electron-builder bundles x86 fpm only; install system fpm and
-            # tell electron-builder to use it. Workaround from:
+            # fpm ("Effing Package Manager") is what electron-builder
+            # invokes to produce the Linux .deb. It bundles an x86 fpm
+            # binary only, so the arm64 runner has to install a native fpm
+            # via gem and tell electron-builder to use it. Workaround from:
             # https://github.com/jordansissel/fpm/issues/1801#issuecomment-919877499
             useSystemFpm: true
           - name: Windows ia32

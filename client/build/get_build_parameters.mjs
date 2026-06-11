@@ -24,17 +24,20 @@ const VALID_PLATFORMS = [
 ];
 const VALID_BUILD_MODES = ['debug', 'release'];
 
-// --arch uses electron-builder's arch vocabulary. The Taskfile and our
-// output/client/<platform>-<arch> directories use Go arch names, so we also
-// return the corresponding Go name from this map.
-const ELECTRON_ARCH_TO_GO_ARCH = {x64: 'amd64', arm64: 'arm64', ia32: '386'};
+// Every (platform, arch) combination we support building. Acts as the single
+// source of truth for arch validation and for the goArch translation we need
+// downstream (Taskfile and `output/client/<platform>-<goArch>` directories use
+// Go arch names; --arch and electron-builder use electron-builder names).
+export const SUPPORTED_BUILDS = [
+  {platform: 'linux', arch: 'x64', goArch: 'amd64'},
+  {platform: 'linux', arch: 'arm64', goArch: 'arm64'},
+  {platform: 'windows', arch: 'ia32', goArch: '386'},
+  {platform: 'windows', arch: 'arm64', goArch: 'arm64'},
+];
 
-// --arch values accepted per platform. Platforms not in this map don't
-// accept --arch.
-const VALID_ARCHITECTURES_BY_PLATFORM = {
-  linux: ['x64', 'arm64'],
-  windows: ['ia32', 'arm64'],
-};
+const PLATFORMS_REQUIRING_ARCH = new Set(
+  SUPPORTED_BUILDS.map(b => b.platform)
+);
 
 const MS_PER_HOUR = 1000 * 60 * 60;
 
@@ -61,25 +64,39 @@ export function getBuildParameters(cliArguments) {
     );
   }
 
-  if (arch) {
-    const validArchs = VALID_ARCHITECTURES_BY_PLATFORM[platform];
-    if (!validArchs) {
-      throw new TypeError(
-        `Architecture "${arch}" cannot be specified for platform "${platform}".`
-      );
-    }
-    if (!validArchs.includes(arch)) {
-      throw new TypeError(
-        `Architecture "${arch}" is not a valid target for ${platform}. Must be one of ${validArchs.join(', ')}`
-      );
-    }
-  }
-
   if (buildMode && !VALID_BUILD_MODES.includes(buildMode)) {
     throw new TypeError(
       `Build mode "${buildMode}" is not a valid build mode for Outline Client. Must be one of ${VALID_BUILD_MODES.join(
         ', '
       )}`
+    );
+  }
+
+  let goArch;
+  if (PLATFORMS_REQUIRING_ARCH.has(platform)) {
+    if (!arch) {
+      const validArchs = SUPPORTED_BUILDS.filter(
+        b => b.platform === platform
+      ).map(b => b.arch);
+      throw new TypeError(
+        `--arch is required for platform "${platform}". Must be one of ${validArchs.join(', ')}.`
+      );
+    }
+    const match = SUPPORTED_BUILDS.find(
+      b => b.platform === platform && b.arch === arch
+    );
+    if (!match) {
+      const validArchs = SUPPORTED_BUILDS.filter(
+        b => b.platform === platform
+      ).map(b => b.arch);
+      throw new TypeError(
+        `Architecture "${arch}" is not a valid target for ${platform}. Must be one of ${validArchs.join(', ')}.`
+      );
+    }
+    goArch = match.goArch;
+  } else if (arch) {
+    throw new TypeError(
+      `--arch cannot be specified for platform "${platform}".`
     );
   }
 
@@ -92,6 +109,12 @@ export function getBuildParameters(cliArguments) {
     sentryDsn,
     buildNumber: Math.floor(Date.now() / MS_PER_HOUR),
     arch,
-    goArch: ELECTRON_ARCH_TO_GO_ARCH[arch],
+    goArch,
+    // The Taskfile parameterizes linux/windows tasks by arch
+    // (`linux:amd64`, `windows:386`, ...); android/apple/browser are single
+    // tasks. Resolve the shape here so callers don't conditional on it.
+    goTaskTarget: PLATFORMS_REQUIRING_ARCH.has(platform)
+      ? `${platform}:${goArch}`
+      : platform,
   };
 }
